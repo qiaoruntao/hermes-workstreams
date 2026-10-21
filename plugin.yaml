@@ -1,0 +1,10 @@
+name: hermes-workstreams
+version: 0.3.0
+description: "Multi-session workstreams: a Hermes Project per issue, with a concise FOCUS.md shown and edited beside the chat."
+author: qiaoruntao
+license: MIT
+provides_tools:
+  - workstream_link
+provides_hooks:
+  - pre_llm_call
+tags: [desktop, workstreams, projects, todo, focus]
