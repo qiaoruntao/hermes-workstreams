@@ -325,8 +325,10 @@ export default {
   name: 'Workstream',
   register(ctx) {
     ctx.register({
-      id: 'workstream-pane', area: 'panes', title: 'Workstream',
-      data: { placement: 'right', width: '320px' },
+      // A tab in the Files zone: Hermes minimizes per zone, so this shares the Files
+      // rail. New id (was 'workstream-pane') so saved layouts re-adopt it via `dock`.
+      id: 'workstream-panel', area: 'panes', title: 'Workstream',
+      data: { placement: 'right', width: '320px', collapsible: true, dock: { pane: 'files', pos: 'center' } },
       render: () => jsx(WorkstreamPane, { ctx }),
     })
     startLinkWorker(ctx)
