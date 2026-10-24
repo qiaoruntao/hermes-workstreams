@@ -34,3 +34,13 @@ def register(ctx: Any) -> None:
         ROOT / "skills" / "workstream-focus" / "SKILL.md",
         description="Use when a request starts or continues a multi-session workstream. Link and keep FOCUS.md.",
     )
+    ctx.register_skill(
+        "workstream-closeout",
+        ROOT / "skills" / "workstream-closeout" / "SKILL.md",
+        description="Use when the user asks to close out a workstream or harvest sessions. Tree + snippets, then archive.",
+    )
+    ctx.register_skill(
+        "workstream-review",
+        ROOT / "skills" / "workstream-review" / "SKILL.md",
+        description="Use when the user asks to review harvested snippets. Turn them into skill/doc edits.",
+    )
