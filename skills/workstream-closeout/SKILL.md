@@ -32,11 +32,12 @@ Outputs go in a new `harvest/` dir inside the workstream (or the dir the user na
 edit the workstream's existing files (FOCUS, notes, handoff); commit them as they are first.
 ```
 <workstream>/harvest/
-├── S<n>-pipeline.md     legend + that session's section (one file per session)
-├── S<n>-report.md       snippets made, ✗ skipped, rules hard to apply
-└── snippets/<slug>.txt  one goal each: correct and wrong calls as facts
+├── <date>-<title-slug>.md   one per session: pipeline section + extraction report
+└── snippets/<slug>.txt      one goal each: correct and wrong calls as facts
 ```
-One clean subagent per session can extract in parallel; each writes only its own S<n> files.
+`<date>` is the session start (YYYY-MM-DD); `<title-slug>` is the session's generated title
+(`sessions.title`), lowercased, hyphenated, ≤ 60 chars. The session id goes inside the file.
+One clean subagent per session can extract in parallel; each writes only its own session file.
 Never write a credential into the harvest: mask it (`***`) and check with a grep before commit.
 Record what happened, nothing more. Add no field, label, or analysis that this skill does not define.
 
@@ -52,11 +53,11 @@ USER / ASSISTANT / CALL#n / RES#n (RES#n answers CALL#n; parallel results arrive
 then each subagent session as `## SUBAGENT A<k>` with lines prefixed `A<k>`. Read the whole
 dump, line by line; never draw from a summary.
 
-### 2.3 Write the session section in `pipeline.md`
-`pipeline.md` starts with the legend below. Each session section:
+### 2.3 Write the session file
+The session file `<date>-<title-slug>.md` holds:
 ````
-## S<n> <session title>
-`<id>` · <date>
+# <session title>
+`<id>` · <date> · Legend: workstream-closeout `references/pipeline-legend.md` @ <plugin commit>
 Goal: <one short, accurate sentence>
 
 ```
@@ -101,20 +102,8 @@ Outcome: <what the session concluded, with key numbers; what it left unconfirmed
 - **Where** in each ★ path step: the host and how to reach it (`rp5 (ssh raspberrypi5@rp5.lan)`,
   `mac (admin)`), a tool server (`SigNoz MCP`), or `user`.
 
-**Legend**
-- One marker per step:
-  - `★` on the shortest correct path: without it the answer cannot be reached or proven. Needs a
-    result that worked.
-  - `✗` failed, misleading, or contradicted by a result. A failed call stays ✗ even when its
-    error showed what to change: it is a learning step, skipped next time; its fix is the `↻★`.
-  - `·` worked but not needed for the answer.
-  - `?` not verified: a shortcut never tried, or a claim no result checked; never ★ it.
-- An empty result (0 rows, not found) is ★ only if the call was right and needed, e.g. it ruled
-  out a likely cause the answer depends on. If a later step shows the input was wrong (name,
-  pattern, field), it is ✗. A right but unneeded check is ·.
-- Optional, before the marker:
-  - `↻` changed retry of an earlier ✗ step in the same episode: same intent, different input.
-  - `×N` the same call repeated N times, shown once.
+**Legend**: markers ★ ✗ · ? ↻ ×N are defined in `references/pipeline-legend.md`. Read it
+before marking; pipeline files cite it instead of copying it.
 
 **Check the ★ steps** before writing the ★ path. When the ★ steps form more than one branch
 (parallel checks, subagents), end each branch's last ★ line with what used it, by tree label:
@@ -128,12 +117,23 @@ Work from the finished pipeline. One snippet per goal; every snippet uses the fo
   same goal; otherwise they are dropped.
 - **Generic goal:** a ✗ that would fail the same way in any task (e.g. shell quoting). Goal is
   written without the task's names. Needs a working way to the same goal in the session;
-  without one, no snippet. If a snippet with the same goal already exists, add a line to it.
+  without one, no snippet. If a snippet with the same goal already exists in this session,
+  add a line to it. Do not dedupe across sessions; merging is `workstream-review`'s job.
 
 **Which ✗ become `no` lines.** Record a ✗ only when its result does not show the fix: the
 result misleads (empty, zero rows, a count that looks fine, apparent success) or the fix
 needs a fact the error does not give (which account, which PATH). Skip errors that name
 their own fix (unknown tool name, bad or missing argument, typo, schema error).
+
+**Which lines are worth keeping.** A line (`ok` or `no`) stays only if it passes one of:
+- it failed in a way that hides the fix (the `no` rule above);
+- it holds something an agent could not guess: an exact name, account, path, filter, ID
+  mapping or command shape that is not in the tool schema or obvious docs;
+- it was costly to find: several attempts, a long run, or a risky action.
+Drop the rest: calls that worked first time, are cheap to redo and teach nothing new (read a
+known doc, `df -h`, `pm2 status` once access works). Drop session-only IDs (PIDs, question
+text, delegation goals) and how a code fix was applied. A snippet left with no line is not
+written; list the E as skipped in the report.
 
 A snippet contains only facts:
 - `ok` — a ★ call. Its `→` line names the kind of information it shows (`sweep summaries`,
@@ -160,7 +160,7 @@ Template, `snippets/<slug>.txt` (keywords start the line; continuation lines are
 ```
 goal    <one line>
 needs   <other snippet slug>                     (optional)
-source  S<n> E<k> [E<k>] · CALL#a b c
+source  <session file name> · E<k> [E<k>] · CALL#a b c
 
 ok  <call>
     → <what it shows>
@@ -170,13 +170,15 @@ no  <failing part>   |   <another with the same result>   (<cause>, optional)
 ```
 
 ### 2.5 Verify extraction
-- Every E with a ★ has a snippet, or its facts are in another snippet with the same goal.
+- Every E with a ★ has a snippet, its facts are in another snippet with the same goal, or it
+  is listed as skipped by the keep rule.
 - Every `ok` comes from a ★ call and every `no` from a ✗ call cited in `source`; each call
   is the `state.db` call, only trimmed or split as 2.4 allows.
 - Every ✗ whose result misleads or hides its fix is a `no` somewhere, or its E has no ★.
 - No snippet holds a finding, step order, or text that is not in its pipeline lines.
-Report the snippets made and the E's skipped. Do not run the recorded commands, merge across
-sessions or update skills as part of extraction.
+End the session file with `## Extraction report`: snippets made, ✗ and E's skipped (with the
+rule), rules hard to apply. Do not run the recorded commands, merge across sessions or update
+skills as part of extraction.
 
 ## 3. Archive
 After the user approves the harvest:
