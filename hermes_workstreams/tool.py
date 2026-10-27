@@ -15,7 +15,7 @@ SCHEMA = {
     "parameters": {
         "type": "object",
         "properties": {
-            "slug": {"type": "string", "description": "kebab-case workstream id, e.g. 'rp5-samba-disconnects'"},
+            "slug": {"type": "string", "description": "kebab-case workstream id, e.g. 'nas-smb-disconnects'"},
             "create": {"type": "boolean", "description": "true to create a new workstream; false to link an existing one"},
             "name": {"type": "string", "description": "create: human project name"},
             "first_task": {"type": "string", "description": "create: first todo for the starter FOCUS.md"},

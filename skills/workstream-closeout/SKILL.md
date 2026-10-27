@@ -99,8 +99,8 @@ Outcome: <what the session concluded, with key numbers; what it left unconfirmed
 - Tree lines are short. Exact commands appear only in the ★ path, in order, including ★ user
   steps (`user: <decision>`) and ★ subagent steps.
 - A ★ result names the value that drove the next step, not just a count: `list services →
-  no gphoto-upload; uploader is gphotos-drop → E4`. A ↻★ also names what changed from its ✗.
-- **Where** in each ★ path step: the host and how to reach it (`nas (ssh admin@nas.lan)`,
+  no photo-sync; the service is photo-uploader → E4`. A ↻★ also names what changed from its ✗.
+- **Where** in each ★ path step: the host and how to reach it (`hostname (ssh username@hostaddress)`,
   `mac (admin)`), a tool server (`SigNoz MCP`), or `user`.
 
 **Legend**: markers ★ ✗ · ? ↻ ×N are defined in `references/pipeline-legend.md`. Read it
@@ -137,12 +137,12 @@ text, delegation goals) and how a code fix was applied. A snippet left with no l
 written; list the E as skipped in the report.
 
 A snippet contains only facts:
-- `ok` — a ★ call. Its `→` line names the kind of information it shows (`sweep summaries`,
+- `ok` — a ★ call. Its `→` line names the kind of information it shows (`job summaries`,
   `log paths`), never the session's findings (`43 files`, `errors=1 at 15:01Z`); those stay
   in the pipeline.
 - `no` — a ✗ call with the same goal. Keep only the part that caused the failure; add a short
   `(cause)` only if it is not obvious. Its `→` line is the error, or for a misleading result
-  the output and what contradicted it (`prints 0 while the log has "upload failed file="
+  the output and what contradicted it (`prints 0 while the log has "job failed"
   lines`); no other values. Wrong calls with the same result share a line, joined by `|`.
 - `needs` — another snippet whose fact a call depends on (login, PATH). Drop that part (the
   ssh/PATH prefix) from this snippet's calls.

@@ -7,7 +7,7 @@ from pathlib import Path
 from hermes_workstreams import core
 from hermes_workstreams.inject import FocusInjector
 
-FOCUS = "# HLS spike\n- [ ] check panel\n- [x] reproduce\nRepos: ~/projects/android_endpoint\n"
+FOCUS = "# HLS spike\n- [ ] check panel\n- [x] reproduce\nRepos: ~/projects/video-service\n"
 
 
 class CoreTests(unittest.TestCase):
