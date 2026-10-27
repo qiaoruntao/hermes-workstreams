@@ -3,13 +3,14 @@ name: workstream-closeout
 description: "Use when harvesting sessions or closing out workstreams."
 ---
 
-# Workstream Closeout (draft)
+# Workstream Closeout
 
 Run only on an explicit user request. Never suggest it.
 - **Close out** a workstream ("close out <slug>", `/workstream close`): phases **1 Assess → 2 Harvest → 3 Archive**.
 - **Harvest only** (any session, no workstream needed): phase 2 alone; ask where to write the output.
 
-Stop for user approval after each phase. Status: phase 2 is being defined; phases 1 and 3 are outlines.
+Stop for user approval after each phase. Status: phase 2 extraction is stable (tested on 5 sessions,
+2 workstreams); snippet usefulness is not yet consumer-tested. Phase 3 ran once; phase 1 is an outline.
 
 ## Core definitions
 The **pipeline** is the session record: what happened, in order, with its findings.
@@ -99,7 +100,7 @@ Outcome: <what the session concluded, with key numbers; what it left unconfirmed
   steps (`user: <decision>`) and ★ subagent steps.
 - A ★ result names the value that drove the next step, not just a count: `list services →
   no gphoto-upload; uploader is gphotos-drop → E4`. A ↻★ also names what changed from its ✗.
-- **Where** in each ★ path step: the host and how to reach it (`rp5 (ssh raspberrypi5@rp5.lan)`,
+- **Where** in each ★ path step: the host and how to reach it (`nas (ssh admin@nas.lan)`,
   `mac (admin)`), a tool server (`SigNoz MCP`), or `user`.
 
 **Legend**: markers ★ ✗ · ? ↻ ×N are defined in `references/pipeline-legend.md`. Read it
