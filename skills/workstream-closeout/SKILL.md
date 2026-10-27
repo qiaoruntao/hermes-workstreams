@@ -28,12 +28,16 @@ Read `FOCUS.md`, `backlog.md`, notes, and `git status` of listed repos. Report: 
 
 ## 2. Harvest — raw extraction only
 Purpose: record the session as a pipeline, then extract goal + right/wrong-call snippets.
-Outputs stay local to the workstream (or the dir the user names):
+Outputs go in a new `harvest/` dir inside the workstream (or the dir the user names). Never
+edit the workstream's existing files (FOCUS, notes, handoff); commit them as they are first.
 ```
 <workstream>/harvest/
-├── pipeline.md          legend + whole-goal section per session
+├── S<n>-pipeline.md     legend + that session's section (one file per session)
+├── S<n>-report.md       snippets made, ✗ skipped, rules hard to apply
 └── snippets/<slug>.txt  one goal each: correct and wrong calls as facts
 ```
+One clean subagent per session can extract in parallel; each writes only its own S<n> files.
+Never write a credential into the harvest: mask it (`***`) and check with a grep before commit.
 Record what happened, nothing more. Add no field, label, or analysis that this skill does not define.
 
 ### 2.1 Find sessions
@@ -174,10 +178,17 @@ no  <failing part>   |   <another with the same result>   (<cause>, optional)
 Report the snippets made and the E's skipped. Do not run the recorded commands, merge across
 sessions or update skills as part of extraction.
 
-## 3. Archive (outline)
-After the user approves the harvest: commit the workstream dir (FOCUS, notes, `harvest/`) so
-snippets stay replayable; `hermes sessions archive --cwd <dir> --dry-run` → show → `--yes`;
-`hermes project archive <slug>`. Archive the current session last.
+## 3. Archive
+After the user approves the harvest:
+1. Commit the workstream dir (FOCUS, notes, `harvest/`) so snippets stay replayable.
+2. Open work that stays unfinished stays in the workstream files (e.g. `handoff.md` as the
+   resume point); say so in the report. Do not move it into project files without approval.
+3. `hermes sessions archive --cwd <dir> --include-open --dry-run` → show the list → same with
+   `--yes`. Without `--include-open`, sessions never formally ended are silently skipped.
+   Archiving hides sessions; nothing is deleted.
+4. Confirm none are left: rerun the dry run → "No sessions match".
+5. Only then `hermes project archive <slug>` (restorable with `hermes project restore`).
+Archive the current session last, if it belongs to the workstream.
 Consolidating pipelines/snippets into revised procedures and skill/doc edits belongs to
 `workstream-review` (draft), run on request after the harvest. Evidence stays traceable.
 
