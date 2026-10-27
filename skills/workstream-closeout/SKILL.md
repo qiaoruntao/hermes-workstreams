@@ -1,6 +1,6 @@
 ---
 name: workstream-closeout
-description: "Use when the user asks to close out a workstream or harvest sessions. Tree + snippets, then archive."
+description: "Use when harvesting sessions or closing out workstreams."
 ---
 
 # Workstream Closeout (draft)
@@ -11,17 +11,28 @@ Run only on an explicit user request. Never suggest it.
 
 Stop for user approval after each phase. Status: phase 2 is being defined; phases 1 and 3 are outlines.
 
+## Core definitions
+The **pipeline** is the session record: what happened, in order, with its findings.
+
+A **snippet** is a set of facts about one goal: which calls work for it, what each shows,
+and which calls fail. It is smaller than its pipeline lines and adds nothing new to them.
+It is not a procedure: the agent using it decides what to run, skip, and in what order.
+Ordering between goals stays in the pipeline. A snippet is not automatically a skill.
+
+The acceptance test: an agent given only the goal and the snippet makes a correct call on
+its first try and none of the listed wrong ones.
+
 ## 1. Assess
 Read `FOCUS.md`, `backlog.md`, notes, and `git status` of listed repos. Report: done / not done
 (open items). Every open item must be marked done, dropped (reason), moved, or upstream before phase 2.
 
 ## 2. Harvest — raw extraction only
-Purpose: show the correct flow for this kind of task and the correct way to call each tool.
+Purpose: record the session as a pipeline, then extract goal + right/wrong-call snippets.
 Outputs stay local to the workstream (or the dir the user names):
 ```
 <workstream>/harvest/
-├── pipeline.md          legend + one section per session
-└── snippets/<slug>.md   one file per snippet
+├── pipeline.md          legend + whole-goal section per session
+└── snippets/<slug>.txt  one goal each: correct and wrong calls as facts
 ```
 Record what happened, nothing more. Add no field, label, or analysis that this skill does not define.
 
@@ -81,6 +92,8 @@ Outcome: <what the session concluded, with key numbers; what it left unconfirmed
   command.
 - Tree lines are short. Exact commands appear only in the ★ path, in order, including ★ user
   steps (`user: <decision>`) and ★ subagent steps.
+- A ★ result names the value that drove the next step, not just a count: `list services →
+  no gphoto-upload; uploader is gphotos-drop → E4`. A ↻★ also names what changed from its ✗.
 - **Where** in each ★ path step: the host and how to reach it (`rp5 (ssh raspberrypi5@rp5.lan)`,
   `mac (admin)`), a tool server (`SigNoz MCP`), or `user`.
 
@@ -104,25 +117,69 @@ Outcome: <what the session concluded, with key numbers; what it left unconfirmed
 `→ E4`, `→ A1 E2`, `→ Outcome`. A ★ that nothing later used is not ★. A single pass needs no
 labels.
 
-### 2.4 Write snippets
-A snippet pairs a ✗ step (Wrong) with a step of the same intent in the same session that worked
-(Right), in any episode or subagent. Right must be a tool call whose result in the session
-shows it worked. User statements and assistant summaries are never evidence; with no
-such result, write no snippet. Template, `snippets/<slug>.md`:
+### 2.4 Extract snippets
+Work from the finished pipeline. One snippet per goal; every snippet uses the format below.
+- **Episode goal:** each E with a ★. Goal = the E's sub-goal, with the session's real names.
+  An E with no ★ gets no snippet. Its ✗ calls go to the snippet of an E whose ★ reached the
+  same goal; otherwise they are dropped.
+- **Generic goal:** a ✗ that would fail the same way in any task (e.g. shell quoting). Goal is
+  written without the task's names. Needs a working way to the same goal in the session;
+  without one, no snippet. If a snippet with the same goal already exists, add a line to it.
+
+**Which ✗ become `no` lines.** Record a ✗ only when its result does not show the fix: the
+result misleads (empty, zero rows, a count that looks fine, apparent success) or the fix
+needs a fact the error does not give (which account, which PATH). Skip errors that name
+their own fix (unknown tool name, bad or missing argument, typo, schema error).
+
+A snippet contains only facts:
+- `ok` — a ★ call. Its `→` line names the kind of information it shows (`sweep summaries`,
+  `log paths`), never the session's findings (`43 files`, `errors=1 at 15:01Z`); those stay
+  in the pipeline.
+- `no` — a ✗ call with the same goal. Keep only the part that caused the failure; add a short
+  `(cause)` only if it is not obvious. Its `→` line is the error, or for a misleading result
+  the output and what contradicted it (`prints 0 while the log has "upload failed file="
+  lines`); no other values. Wrong calls with the same result share a line, joined by `|`.
+- `needs` — another snippet whose fact a call depends on (login, PATH). Drop that part (the
+  ssh/PATH prefix) from this snippet's calls.
+
+Rules:
+- Facts are unordered. No steps, reasons, branches, gates, limits or findings.
+- Add nothing that is not on the E's pipeline lines or in their calls and results.
+- Take calls from the full tool call in `state.db` (the dump can truncate and double escapes).
+- Trim, never replace. Drop wrappers and arguments that are obvious or a default (tool_call
+  wrapper, free-text context, limits, timeouts, print headers); keep every part that is the
+  lesson (account, PATH, exact name, filter). Never swap a command for a different one, even
+  an equivalent one. A call that bundles several commands may be split into one `ok` line per
+  command whose result was used; drop commands a result showed broken.
+
+Template, `snippets/<slug>.txt` (keywords start the line; continuation lines are indented):
 ```
-# <slug>
-Trigger: <the sub-goal, in one line>
-Wrong: <where>: <failed call> → <exact error>
-Right: <where>: <exact working call>
-Evidence: S<n> <CALL#k from the dump> → <the result that shows it worked>
+goal    <one line>
+needs   <other snippet slug>                     (optional)
+source  S<n> E<k> [E<k>] · CALL#a b c
+
+ok  <call>
+    → <what it shows>
+
+no  <failing part>   |   <another with the same result>   (<cause>, optional)
+    → <error or misleading output>
 ```
+
+### 2.5 Verify extraction
+- Every E with a ★ has a snippet, or its facts are in another snippet with the same goal.
+- Every `ok` comes from a ★ call and every `no` from a ✗ call cited in `source`; each call
+  is the `state.db` call, only trimmed or split as 2.4 allows.
+- Every ✗ whose result misleads or hides its fix is a `no` somewhere, or its E has no ★.
+- No snippet holds a finding, step order, or text that is not in its pipeline lines.
+Report the snippets made and the E's skipped. Do not run the recorded commands, merge across
+sessions or update skills as part of extraction.
 
 ## 3. Archive (outline)
 After the user approves the harvest: commit the workstream dir (FOCUS, notes, `harvest/`) so
 snippets stay replayable; `hermes sessions archive --cwd <dir> --dry-run` → show → `--yes`;
 `hermes project archive <slug>`. Archive the current session last.
-Turning snippets into skill/doc edits is a separate skill, `workstream-review` (draft), run on
-request after the harvest.
+Consolidating pipelines/snippets into revised procedures and skill/doc edits belongs to
+`workstream-review` (draft), run on request after the harvest. Evidence stays traceable.
 
 ## Pitfalls
 - Summaries hide errors, e.g. a query that used the user's informal service name instead of the real one.
@@ -132,3 +189,9 @@ request after the harvest.
 ## Evaluating this skill (not part of a closeout)
 After changing the legend or rules, check that different models still mark the same sessions
 the same way: `references/model-agreement.md`. Steps where models split point at wording to fix.
+For a requested usefulness trial, give clean agents only the task and snippets, not the source
+or failure ledger. Compare their next actions against source mistakes; fix gaps and retest with
+fresh agents. Preserve the baseline, check command syntax, and report blocked/unexercised cases
+separately from prevented mistakes. An offline plan test is not live execution proof.
+For critical conditional guards, also give clean consumers the recorded error response and
+check their next action. Merely mentioning an untriggered safeguard is not a passed branch test.
